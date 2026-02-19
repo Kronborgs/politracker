@@ -169,6 +169,23 @@ Efter deploy:
 - API: `http://UNRAID_IP:8080/health`
 - Ollama: `http://UNRAID_IP:11434`
 
+## Stabil 2-container mode (kun Backend + WebUI)
+
+Ja, det er stabilt at køre kun 2 containere fra denne repo:
+- `politracker-api`
+- `politracker-web`
+
+Forudsætning: Postgres + Qdrant + Ollama kører allerede eksternt (andre containere, samme docker-netværk, eller managed services).
+
+Filer klar til dette setup:
+- Unraid templates: `infra/unraid-template-2containers.xml`
+- Compose stack: `infra/unraid-stack-2containers.yml`
+
+Sæt disse API env vars til dine eksterne services:
+- `DATABASE_URL`
+- `QDRANT_URL`
+- `OLLAMA_URL`
+
 ### Unraid felt-guide (hurtig udfyldning)
 
 #### politracker-ollama (GPU)
