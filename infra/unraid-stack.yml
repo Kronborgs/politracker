@@ -1,0 +1,92 @@
+name: politracker
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: politracker-postgres
+    environment:
+      POSTGRES_DB: politracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - /mnt/user/appdata/politracker/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d politracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.2
+    container_name: politracker-qdrant
+    volumes:
+      - /mnt/user/appdata/politracker/qdrant:/qdrant/storage
+    restart: unless-stopped
+
+  ollama:
+    image: ghcr.io/kronborgs/politracker-ollama:latest
+    container_name: politracker-ollama
+    environment:
+      EMBED_MODEL: nomic-embed-text
+      LLM_MODEL: qwen2.5:7b-instruct
+      PULL_ON_START: "true"
+    volumes:
+      - /mnt/user/appdata/politracker/ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/kronborgs/politracker-api:latest
+    container_name: politracker-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      ollama:
+        condition: service_started
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/politracker
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: politracker_chunks
+      OLLAMA_URL: http://ollama:11434
+      EMBED_MODEL: nomic-embed-text
+      LLM_MODEL: qwen2.5:7b-instruct
+      APP_VERSION: latest
+      GIT_SHA: manual
+      BUILD_TIME: manual
+      ADMIN_EMAIL: admin@politracker.local
+      ADMIN_PASSWORD: CHANGE_ME_STRONG
+      JWT_SECRET: CHANGE_ME_SUPER_LONG_SECRET
+    volumes:
+      - /mnt/user/appdata/politracker/api:/app/apps/api/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/kronborgs/politracker-web:latest
+    container_name: politracker-web
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      WEB_PORT: 3000
+      NEXT_PUBLIC_API_BASE_URL: http://YOUR_UNRAID_IP:8080
+      API_INTERNAL_BASE_URL: http://api:8080
+      APP_VERSION: latest
+      GIT_SHA: manual
+      BUILD_TIME: manual
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

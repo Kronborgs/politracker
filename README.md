@@ -145,6 +145,30 @@ Denne repo er sat til owner `Kronborgs` i:
 - Brug custom docker network (fx `proxynet`) så proxy kan nå containers.
 - Certifikater håndteres af reverse proxy.
 
+## Unraid all-in-one (én samlet deployment)
+
+Hvis du vil undgå at oprette flere Docker templates manuelt, brug stack-filen:
+
+- Fil: `infra/unraid-stack.yml`
+- Den starter samlet: `postgres + qdrant + ollama + api + web`
+
+### Sådan gør du i Unraid (Compose Manager)
+
+1. Apps -> installer **Compose Manager** (hvis ikke allerede installeret).
+2. Gå til **Compose Manager** -> **Add New Stack**.
+3. Navn: `politracker`.
+4. Indsæt indholdet fra `infra/unraid-stack.yml`.
+5. Skift disse værdier før deploy:
+  - `ADMIN_PASSWORD`
+  - `JWT_SECRET`
+  - `NEXT_PUBLIC_API_BASE_URL` til din Unraid IP/domæne
+6. Deploy stack.
+
+Efter deploy:
+- WebUI: `http://UNRAID_IP:3000`
+- API: `http://UNRAID_IP:8080/health`
+- Ollama: `http://UNRAID_IP:11434`
+
 ### Unraid felt-guide (hurtig udfyldning)
 
 #### politracker-ollama (GPU)
