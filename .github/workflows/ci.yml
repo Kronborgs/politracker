@@ -58,6 +58,16 @@ jobs:
             GIT_SHA=${{ github.sha }}
             BUILD_TIME=${{ steps.version.outputs.build_time }}
 
+      - name: Build + Push Ollama image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/ollama/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/politracker-ollama:${{ steps.version.outputs.version }}
+            ghcr.io/${{ env.OWNER }}/politracker-ollama:latest
+
       - name: Build + Push Web image
         uses: docker/build-push-action@v6
         with:
@@ -89,4 +99,5 @@ jobs:
 
             Images:
             - ghcr.io/${{ env.OWNER }}/politracker-api:${{ steps.version.outputs.version }}
+            - ghcr.io/${{ env.OWNER }}/politracker-ollama:${{ steps.version.outputs.version }}
             - ghcr.io/${{ env.OWNER }}/politracker-web:${{ steps.version.outputs.version }}

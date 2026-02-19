@@ -120,6 +120,7 @@ Workflow: `.github/workflows/ci.yml`
   - defaults: `0` og `1`
 - Bygger og pusher images til GHCR:
   - `ghcr.io/Kronborgs/politracker-api:<VERSION>` + `latest`
+  - `ghcr.io/Kronborgs/politracker-ollama:<VERSION>` + `latest`
   - `ghcr.io/Kronborgs/politracker-web:<VERSION>` + `latest`
 - Opretter Git tag + GitHub Release
 - Bager build metadata ind i images via build args:
@@ -148,14 +149,20 @@ Denne repo er sat til owner `Kronborgs` i:
 
 #### politracker-ollama (GPU)
 - Name: `politracker-ollama`
-- Repository: `ollama/ollama:latest`
-- Registry URL: `https://hub.docker.com/r/ollama/ollama`
+- Repository: `ghcr.io/Kronborgs/politracker-ollama:latest`
+- Registry URL: `https://ghcr.io`
 - Network Type: `Bridge`
 - Console shell command: `Shell`
 - Privileged: `Off`
 - Extra Parameters: `--gpus=all`
 - Port: `11434`
 - Path mount: `/root/.ollama` -> `/mnt/user/appdata/politracker/ollama`
+- Variables:
+  - `EMBED_MODEL=nomic-embed-text`
+  - `LLM_MODEL=qwen2.5:7b-instruct`
+  - `PULL_ON_START=true`
+
+Denne image starter Ollama og kører automatisk `ollama pull` for embed + llm model ved boot (hvis `PULL_ON_START=true`).
 
 #### politracker-api
 - Name: `politracker-api`
@@ -177,6 +184,70 @@ Denne repo er sat til owner `Kronborgs` i:
 - Privileged: `Off`
 - Port: `3000`
 - Krævede env vars: `NEXT_PUBLIC_API_BASE_URL`, `API_INTERNAL_BASE_URL`
+
+## Unraid “Add Container” (felt-for-felt)
+
+Når du klikker **Add Container** i Unraid, brug disse værdier.
+
+### A) Ollama (med model auto-pull + GPU)
+- Template: `Default`
+- Name: `politracker-ollama`
+- Overview: `Ollama runtime med auto-pull af modeller`
+- Additional Requirements: `NVIDIA GPU plugin installeret i Unraid`
+- Repository: `ghcr.io/Kronborgs/politracker-ollama:latest`
+- Registry URL: `https://ghcr.io`
+- Icon URL: `https://raw.githubusercontent.com/ollama/ollama/main/docs/logo.png`
+- WebUI: `http://[IP]:[PORT:11434]`
+- Extra Parameters: `--gpus=all`
+- Post Arguments: *(tom)*
+- CPU Pinning: valgfri
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Add allocations:
+  - Port: `11434` -> `11434` (TCP)
+  - Path: `/root/.ollama` -> `/mnt/user/appdata/politracker/ollama`
+  - Variable: `EMBED_MODEL=nomic-embed-text`
+  - Variable: `LLM_MODEL=qwen2.5:7b-instruct`
+  - Variable: `PULL_ON_START=true`
+
+### B) API
+- Template: `Default`
+- Name: `politracker-api`
+- Repository: `ghcr.io/Kronborgs/politracker-api:latest`
+- Registry URL: `https://ghcr.io`
+- WebUI: `http://[IP]:[PORT:8080]/health`
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Add allocations:
+  - Port: `8080` -> `8080` (TCP)
+  - Path: `/app/apps/api/data` -> `/mnt/user/appdata/politracker/api`
+  - Variables:
+    - `DATABASE_URL=postgres://postgres:postgres@postgres:5432/politracker`
+    - `QDRANT_URL=http://qdrant:6333`
+    - `QDRANT_COLLECTION=politracker_chunks`
+    - `OLLAMA_URL=http://politracker-ollama:11434`
+    - `EMBED_MODEL=nomic-embed-text`
+    - `LLM_MODEL=qwen2.5:7b-instruct`
+    - `ADMIN_EMAIL=admin@politracker.local`
+    - `ADMIN_PASSWORD=<stærk adgangskode>`
+    - `JWT_SECRET=<lang secret>`
+
+### C) Web
+- Template: `Default`
+- Name: `politracker-web`
+- Repository: `ghcr.io/Kronborgs/politracker-web:latest`
+- Registry URL: `https://ghcr.io`
+- WebUI: `http://[IP]:[PORT:3000]`
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Add allocations:
+  - Port: `3000` -> `3000` (TCP)
+  - Variables:
+    - `NEXT_PUBLIC_API_BASE_URL=https://dit-domæne/api`
+    - `API_INTERNAL_BASE_URL=http://politracker-api:8080`
 
 ## Noter om drift
 

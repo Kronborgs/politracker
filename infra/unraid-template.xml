@@ -2,8 +2,8 @@
 <Containers>
   <Container version="2">
     <Name>politracker-ollama</Name>
-    <Repository>ollama/ollama:latest</Repository>
-    <Registry>https://hub.docker.com/r/ollama/ollama</Registry>
+    <Repository>ghcr.io/Kronborgs/politracker-ollama:latest</Repository>
+    <Registry>https://ghcr.io</Registry>
     <Network>bridge</Network>
     <MyIP/>
     <Shell>sh</Shell>
@@ -19,6 +19,9 @@
     <PostArgs/>
     <Config Name="Ollama Port" Target="11434" Default="11434" Mode="tcp" Description="Ollama API port" Type="Port" Display="always" Required="true" Mask="false">11434</Config>
     <Config Name="Ollama AppData" Target="/root/.ollama" Default="/mnt/user/appdata/politracker/ollama" Mode="rw" Description="Persistent model storage" Type="Path" Display="always" Required="true" Mask="false"/>
+    <Config Name="EMBED_MODEL" Target="EMBED_MODEL" Default="nomic-embed-text" Mode="" Description="Embedding model pulled on startup" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="LLM_MODEL" Target="LLM_MODEL" Default="qwen2.5:7b-instruct" Mode="" Description="LLM model pulled on startup" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="PULL_ON_START" Target="PULL_ON_START" Default="true" Mode="" Description="Auto pull models when container starts" Type="Variable" Display="always" Required="true" Mask="false"/>
   </Container>
 
   <Container version="2">

@@ -25,12 +25,27 @@ services:
       - "6333:6333"
 
   ollama:
-    image: ollama/ollama:latest
+    build:
+      context: ..
+      dockerfile: apps/ollama/Dockerfile
     container_name: politracker-ollama
+    environment:
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b-instruct}
+      PULL_ON_START: ${PULL_ON_START:-true}
     volumes:
       - ./data/ollama:/root/.ollama
     ports:
       - "11434:11434"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   api:
     build:
