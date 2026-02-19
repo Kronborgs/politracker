@@ -1,0 +1,13 @@
+node_modules
+.pnpm-store
+.env
+.env.local
+.env.*.local
+.next
+dist
+coverage
+apps/api/data
+infra/data
+data
+.DS_Store
+*.log

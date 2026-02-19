@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<Containers>
+  <Container version="2">
+    <Name>politracker-api</Name>
+    <Repository>ghcr.io/OWNER/politracker-api:latest</Repository>
+    <Network>bridge</Network>
+    <MyIP/>
+    <Shell>sh</Shell>
+    <Privileged>false</Privileged>
+    <Support>https://github.com/OWNER/politracker</Support>
+    <Project>https://github.com/OWNER/politracker</Project>
+    <Overview>Politracker API for statement ingestion/analyze</Overview>
+    <Category>Network:Web</Category>
+    <WebUI>http://[IP]:[PORT:8080]/health</WebUI>
+    <TemplateURL/>
+    <Icon>https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/nginx-icon.png</Icon>
+    <Config Name="API Port" Target="8080" Default="8080" Mode="tcp" Description="API Port" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+    <Config Name="AppData" Target="/app/apps/api/data" Default="/mnt/user/appdata/politracker/api" Mode="rw" Description="Persistent API data" Type="Path" Display="always" Required="true" Mask="false"/>
+    <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgres://postgres:postgres@postgres:5432/politracker" Mode="" Description="Postgres DSN" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="QDRANT_URL" Target="QDRANT_URL" Default="http://qdrant:6333" Mode="" Description="Qdrant URL" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="OLLAMA_URL" Target="OLLAMA_URL" Default="http://ollama:11434" Mode="" Description="Ollama URL" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="JWT_SECRET" Target="JWT_SECRET" Default="change-me" Mode="" Description="JWT secret" Type="Variable" Display="always" Required="true" Mask="true"/>
+    <Config Name="ADMIN_EMAIL" Target="ADMIN_EMAIL" Default="admin@politracker.local" Mode="" Description="Admin email" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="ADMIN_PASSWORD" Target="ADMIN_PASSWORD" Default="change-me-strong" Mode="" Description="Admin password" Type="Variable" Display="always" Required="true" Mask="true"/>
+  </Container>
+
+  <Container version="2">
+    <Name>politracker-web</Name>
+    <Repository>ghcr.io/OWNER/politracker-web:latest</Repository>
+    <Network>bridge</Network>
+    <Shell>sh</Shell>
+    <Privileged>false</Privileged>
+    <Category>Network:Web</Category>
+    <WebUI>http://[IP]:[PORT:3000]/</WebUI>
+    <Overview>Politracker Next.js frontend</Overview>
+    <Icon>https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/nginx-icon.png</Icon>
+    <Config Name="Web Port" Target="3000" Default="3000" Mode="tcp" Description="Web Port" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
+    <Config Name="NEXT_PUBLIC_API_BASE_URL" Target="NEXT_PUBLIC_API_BASE_URL" Default="https://politracker.example.com/api" Mode="" Description="Public API URL" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="API_INTERNAL_BASE_URL" Target="API_INTERNAL_BASE_URL" Default="http://politracker-api:8080" Mode="" Description="Internal API URL" Type="Variable" Display="always" Required="true" Mask="false"/>
+  </Container>
+</Containers>

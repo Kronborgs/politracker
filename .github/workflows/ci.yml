@@ -1,0 +1,92 @@
+name: CI + Release
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: OWNER
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute version
+        id: version
+        run: |
+          MAJOR="${{ vars.MAJOR_VERSION }}"
+          MINOR="${{ vars.MINOR_VERSION }}"
+          if [ -z "$MAJOR" ]; then MAJOR="0"; fi
+          if [ -z "$MINOR" ]; then MINOR="1"; fi
+          VERSION="v${MAJOR}.${MINOR}.${{ github.run_number }}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build + Push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/politracker-api:${{ steps.version.outputs.version }}
+            ghcr.io/${{ env.OWNER }}/politracker-api:latest
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ steps.version.outputs.build_time }}
+
+      - name: Build + Push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/politracker-web:${{ steps.version.outputs.version }}
+            ghcr.io/${{ env.OWNER }}/politracker-web:latest
+          build-args: |
+            APP_VERSION=${{ steps.version.outputs.version }}
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ steps.version.outputs.build_time }}
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body: |
+            Politracker release ${{ steps.version.outputs.version }}
+
+            Images:
+            - ghcr.io/${{ env.OWNER }}/politracker-api:${{ steps.version.outputs.version }}
+            - ghcr.io/${{ env.OWNER }}/politracker-web:${{ steps.version.outputs.version }}

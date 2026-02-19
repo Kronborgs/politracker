@@ -1,0 +1,90 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: politracker-postgres
+    environment:
+      POSTGRES_DB: politracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d politracker"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.2
+    container_name: politracker-qdrant
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    ports:
+      - "6333:6333"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: politracker-ollama
+    volumes:
+      - ./data/ollama:/root/.ollama
+    ports:
+      - "11434:11434"
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+        GIT_SHA: ${GIT_SHA:-local}
+        BUILD_TIME: ${BUILD_TIME:-1970-01-01T00:00:00.000Z}
+    container_name: politracker-api
+    environment:
+      PORT: ${PORT:-8080}
+      DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@postgres:5432/politracker}
+      QDRANT_URL: ${QDRANT_URL:-http://qdrant:6333}
+      QDRANT_COLLECTION: ${QDRANT_COLLECTION:-politracker_chunks}
+      OLLAMA_URL: ${OLLAMA_URL:-http://ollama:11434}
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:7b-instruct}
+      APP_VERSION: ${APP_VERSION:-dev}
+      GIT_SHA: ${GIT_SHA:-local}
+      BUILD_TIME: ${BUILD_TIME:-1970-01-01T00:00:00.000Z}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@politracker.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-changeme123}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-change-me-now}
+    volumes:
+      - ./data/app:/app/apps/api/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      ollama:
+        condition: service_started
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        APP_VERSION: ${APP_VERSION:-dev}
+        GIT_SHA: ${GIT_SHA:-local}
+        BUILD_TIME: ${BUILD_TIME:-1970-01-01T00:00:00.000Z}
+    container_name: politracker-web
+    environment:
+      WEB_PORT: ${WEB_PORT:-3000}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8080}
+      API_INTERNAL_BASE_URL: ${API_INTERNAL_BASE_URL:-http://api:8080}
+      APP_VERSION: ${APP_VERSION:-dev}
+      GIT_SHA: ${GIT_SHA:-local}
+      BUILD_TIME: ${BUILD_TIME:-1970-01-01T00:00:00.000Z}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "3000:3000"
