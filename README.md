@@ -119,21 +119,22 @@ Workflow: `.github/workflows/ci.yml`
   - `MAJOR_VERSION` og `MINOR_VERSION` kan sættes som GitHub Repository Variables
   - defaults: `0` og `1`
 - Bygger og pusher images til GHCR:
-  - `ghcr.io/OWNER/politracker-api:<VERSION>` + `latest`
-  - `ghcr.io/OWNER/politracker-web:<VERSION>` + `latest`
+  - `ghcr.io/Kronborgs/politracker-api:<VERSION>` + `latest`
+  - `ghcr.io/Kronborgs/politracker-web:<VERSION>` + `latest`
 - Opretter Git tag + GitHub Release
 - Bager build metadata ind i images via build args:
   - `APP_VERSION`, `GIT_SHA`, `BUILD_TIME`
 
-### OWNER placeholder
+### GHCR owner
 
-Erstat `OWNER` med dit GitHub owner-navn i:
+Denne repo er sat til owner `Kronborgs` i:
 - `.github/workflows/ci.yml`
 - `infra/unraid-template.xml`
 
 ## Unraid + Reverse Proxy
 
-- Brug `infra/unraid-template.xml` for to containere:
+- Brug `infra/unraid-template.xml` for tre containere:
+  - `politracker-ollama` (port 11434, GPU)
   - `politracker-api` (port 8080)
   - `politracker-web` (port 3000)
 - Kør Postgres/Qdrant/Ollama som separate Unraid apps eller stacks.
@@ -142,6 +143,40 @@ Erstat `OWNER` med dit GitHub owner-navn i:
 - Valgfrit proxy `/api` til: `http://politracker-api:8080`
 - Brug custom docker network (fx `proxynet`) så proxy kan nå containers.
 - Certifikater håndteres af reverse proxy.
+
+### Unraid felt-guide (hurtig udfyldning)
+
+#### politracker-ollama (GPU)
+- Name: `politracker-ollama`
+- Repository: `ollama/ollama:latest`
+- Registry URL: `https://hub.docker.com/r/ollama/ollama`
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Extra Parameters: `--gpus=all`
+- Port: `11434`
+- Path mount: `/root/.ollama` -> `/mnt/user/appdata/politracker/ollama`
+
+#### politracker-api
+- Name: `politracker-api`
+- Repository: `ghcr.io/Kronborgs/politracker-api:latest`
+- Registry URL: `https://ghcr.io`
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Port: `8080`
+- Path mount: `/app/apps/api/data` -> `/mnt/user/appdata/politracker/api`
+- Krævede env vars: `DATABASE_URL`, `QDRANT_URL`, `OLLAMA_URL`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+
+#### politracker-web
+- Name: `politracker-web`
+- Repository: `ghcr.io/Kronborgs/politracker-web:latest`
+- Registry URL: `https://ghcr.io`
+- Network Type: `Bridge`
+- Console shell command: `Shell`
+- Privileged: `Off`
+- Port: `3000`
+- Krævede env vars: `NEXT_PUBLIC_API_BASE_URL`, `API_INTERNAL_BASE_URL`
 
 ## Noter om drift
 

@@ -1,19 +1,43 @@
 <?xml version="1.0"?>
 <Containers>
   <Container version="2">
-    <Name>politracker-api</Name>
-    <Repository>ghcr.io/OWNER/politracker-api:latest</Repository>
+    <Name>politracker-ollama</Name>
+    <Repository>ollama/ollama:latest</Repository>
+    <Registry>https://hub.docker.com/r/ollama/ollama</Registry>
     <Network>bridge</Network>
     <MyIP/>
     <Shell>sh</Shell>
     <Privileged>false</Privileged>
-    <Support>https://github.com/OWNER/politracker</Support>
-    <Project>https://github.com/OWNER/politracker</Project>
+    <Support>https://github.com/Kronborgs/politracker</Support>
+    <Project>https://github.com/Kronborgs/politracker</Project>
+    <Overview>Ollama runtime til embeddings/LLM for politracker</Overview>
+    <Category>AI:Machine Learning</Category>
+    <WebUI>http://[IP]:[PORT:11434]</WebUI>
+    <TemplateURL/>
+    <Icon>https://raw.githubusercontent.com/ollama/ollama/main/docs/logo.png</Icon>
+    <ExtraParams>--gpus=all</ExtraParams>
+    <PostArgs/>
+    <Config Name="Ollama Port" Target="11434" Default="11434" Mode="tcp" Description="Ollama API port" Type="Port" Display="always" Required="true" Mask="false">11434</Config>
+    <Config Name="Ollama AppData" Target="/root/.ollama" Default="/mnt/user/appdata/politracker/ollama" Mode="rw" Description="Persistent model storage" Type="Path" Display="always" Required="true" Mask="false"/>
+  </Container>
+
+  <Container version="2">
+    <Name>politracker-api</Name>
+    <Repository>ghcr.io/Kronborgs/politracker-api:latest</Repository>
+    <Registry>https://ghcr.io</Registry>
+    <Network>bridge</Network>
+    <MyIP/>
+    <Shell>sh</Shell>
+    <Privileged>false</Privileged>
+    <Support>https://github.com/Kronborgs/politracker</Support>
+    <Project>https://github.com/Kronborgs/politracker</Project>
     <Overview>Politracker API for statement ingestion/analyze</Overview>
     <Category>Network:Web</Category>
     <WebUI>http://[IP]:[PORT:8080]/health</WebUI>
     <TemplateURL/>
     <Icon>https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/nginx-icon.png</Icon>
+    <ExtraParams/>
+    <PostArgs/>
     <Config Name="API Port" Target="8080" Default="8080" Mode="tcp" Description="API Port" Type="Port" Display="always" Required="true" Mask="false">8080</Config>
     <Config Name="AppData" Target="/app/apps/api/data" Default="/mnt/user/appdata/politracker/api" Mode="rw" Description="Persistent API data" Type="Path" Display="always" Required="true" Mask="false"/>
     <Config Name="DATABASE_URL" Target="DATABASE_URL" Default="postgres://postgres:postgres@postgres:5432/politracker" Mode="" Description="Postgres DSN" Type="Variable" Display="always" Required="true" Mask="false"/>
@@ -26,7 +50,8 @@
 
   <Container version="2">
     <Name>politracker-web</Name>
-    <Repository>ghcr.io/OWNER/politracker-web:latest</Repository>
+    <Repository>ghcr.io/Kronborgs/politracker-web:latest</Repository>
+    <Registry>https://ghcr.io</Registry>
     <Network>bridge</Network>
     <Shell>sh</Shell>
     <Privileged>false</Privileged>
@@ -34,8 +59,13 @@
     <WebUI>http://[IP]:[PORT:3000]/</WebUI>
     <Overview>Politracker Next.js frontend</Overview>
     <Icon>https://raw.githubusercontent.com/linuxserver/docker-templates/master/linuxserver.io/img/nginx-icon.png</Icon>
+    <ExtraParams/>
+    <PostArgs/>
     <Config Name="Web Port" Target="3000" Default="3000" Mode="tcp" Description="Web Port" Type="Port" Display="always" Required="true" Mask="false">3000</Config>
     <Config Name="NEXT_PUBLIC_API_BASE_URL" Target="NEXT_PUBLIC_API_BASE_URL" Default="https://politracker.example.com/api" Mode="" Description="Public API URL" Type="Variable" Display="always" Required="true" Mask="false"/>
     <Config Name="API_INTERNAL_BASE_URL" Target="API_INTERNAL_BASE_URL" Default="http://politracker-api:8080" Mode="" Description="Internal API URL" Type="Variable" Display="always" Required="true" Mask="false"/>
+    <Config Name="APP_VERSION" Target="APP_VERSION" Default="latest" Mode="" Description="Visible app version" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+    <Config Name="GIT_SHA" Target="GIT_SHA" Default="manual" Mode="" Description="Git sha metadata" Type="Variable" Display="advanced" Required="false" Mask="false"/>
+    <Config Name="BUILD_TIME" Target="BUILD_TIME" Default="manual" Mode="" Description="Build timestamp metadata" Type="Variable" Display="advanced" Required="false" Mask="false"/>
   </Container>
 </Containers>
